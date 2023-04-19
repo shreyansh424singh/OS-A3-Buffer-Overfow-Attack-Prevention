@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "param.h"
 #include "memlayout.h"
+#include "date.h"
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
@@ -531,4 +532,32 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+// LCG parameters
+#define A 1664525
+#define C 1013904223
+#define M 2294967296 // 2^31
+
+unsigned int seed = 12345; // initial seed value
+
+// Generate a pseudo-random number between 0 and M-1
+unsigned int rand()
+{
+  seed = (A * seed + C) % M;
+  return seed;
+}
+
+int random(void)
+{
+  struct rtcdate rtime;
+  // Get the current system time
+  cmostime(&rtime);
+  seed = (rtime.hour + 60 * rtime.minute + 3600 * rtime.second);
+
+  int rand_num;
+  // Generate a random number between 0 and M-1
+  // for (int i = 0; i < 100; i++)
+  rand_num = rand();
+  return rand_num;
 }
