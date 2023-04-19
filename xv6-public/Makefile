@@ -184,7 +184,7 @@ UPROGS=\
 	_buffer_overflow\
 
 fs.img: mkfs payload README $(UPROGS)
-	./mkfs fs.img README $(UPROGS)
+	./mkfs fs.img README payload $(UPROGS)
 
 -include *.d
 
