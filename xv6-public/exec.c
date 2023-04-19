@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "x86.h"
 #include "elf.h"
+#include "aslr.h"
 
 int
 exec(char *path, char **argv)
@@ -37,6 +38,11 @@ exec(char *path, char **argv)
 
   if((pgdir = setupkvm()) == 0)
     goto bad;
+
+  if(aslr_enabled){
+    uint rnd = random() % PGSIZE; // generate a random offset value
+    ph.vaddr += rnd;
+  }
 
   // Load program into memory.
   sz = 0;
