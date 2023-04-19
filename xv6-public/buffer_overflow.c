@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
 
     read(fd, payload, 100);
 
+    printf(1, "%d\n", random());
+
     vulnerable_func(payload);
 
     close(fd);
