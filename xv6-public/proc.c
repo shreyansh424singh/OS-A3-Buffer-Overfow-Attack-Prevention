@@ -537,7 +537,7 @@ procdump(void)
 // LCG parameters
 #define A 1664525
 #define C 1013904223
-#define M 2294967296 // 2^31
+#define M 40969837
 
 unsigned int seed = 12345; // initial seed value
 
@@ -553,11 +553,11 @@ int random(void)
   struct rtcdate rtime;
   // Get the current system time
   cmostime(&rtime);
-  seed = (rtime.hour + 60 * rtime.minute + 3600 * rtime.second);
+  seed += (rtime.hour + 60 * rtime.minute + 3600 * rtime.second) % M;
 
   int rand_num;
   // Generate a random number between 0 and M-1
-  // for (int i = 0; i < 100; i++)
-  rand_num = rand();
-  return rand_num;
+  for (int i = 0; i < 10; i++)
+    rand_num = rand() % 4096;
+  return (rand_num*rand_num);
 }
