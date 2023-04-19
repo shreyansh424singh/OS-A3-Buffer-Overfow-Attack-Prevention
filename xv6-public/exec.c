@@ -8,6 +8,16 @@
 #include "elf.h"
 #include "aslr.h"
 
+static unsigned int bseed = 0;
+
+unsigned int basic_rand(void) {
+  const unsigned int a = 1664525;
+  const unsigned int c = 1013904223;
+  const unsigned int m = 4294967296; // 2^32
+  bseed = (a * bseed + c) % m;
+  return bseed;
+}
+
 int
 exec(char *path, char **argv)
 {
@@ -40,7 +50,7 @@ exec(char *path, char **argv)
     goto bad;
 
   if(aslr_enabled){
-    uint rnd = random() % PGSIZE; // generate a random offset value
+    uint rnd = basic_rand() % PGSIZE; // generate a random offset value
     ph.vaddr += rnd;
   }
 
