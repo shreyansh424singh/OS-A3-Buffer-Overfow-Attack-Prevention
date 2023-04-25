@@ -13,7 +13,7 @@ static unsigned int bseed = 0;
 unsigned int basic_rand(void) {
   const unsigned int a = 1664525;
   const unsigned int c = 1013904223;
-  const unsigned int m = 4294967296; // 2^32
+  const unsigned int m = 4096;
   bseed = (a * bseed + c) % m;
   return bseed;
 }
@@ -49,10 +49,12 @@ exec(char *path, char **argv)
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
-  if(aslr_enabled){
-    uint rnd = basic_rand() % PGSIZE; // generate a random offset value
-    ph.vaddr += rnd;
-  }
+  // if(aslr_enabled){
+  //   uint rnd = basic_rand() % PGSIZE; // generate a random offset value
+  //   ph.vaddr += rnd;
+  // }
+
+  // cprintf("%d \n", ph.vaddr);
 
   // Load program into memory.
   sz = 0;

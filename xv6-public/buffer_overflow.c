@@ -11,12 +11,7 @@ void foo()
 void vulnerable_func(char *payload)
 {
     char buffer[4];
-    printf(1, "Written\n");
     strcpy(buffer, payload);
-
-    void *adr = __builtin_extract_return_addr(__builtin_return_address(0));
-    printf(1, "buffer Address = %p\n", &buffer);
-    printf(1, "Return Address = %p\n", &adr);
 }
 
 int main(int argc, char *argv[])
@@ -27,8 +22,6 @@ int main(int argc, char *argv[])
     char payload[100];
 
     read(fd, payload, 100);
-
-    printf(1, "%d\n", random());
 
     vulnerable_func(payload);
 
