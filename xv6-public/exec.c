@@ -20,6 +20,7 @@ exec(char *path, char **argv)
   struct proc *curproc = myproc();
   int aslr_enabled=0;
 
+  // Read ASLR value from the aslr_flag file
   char read[2] = {0};
   if ((ip = namei("aslr_flag")) == 0) {
     cprintf("unable to open\n");
@@ -32,6 +33,7 @@ exec(char *path, char **argv)
 
   uint loff = 0;
 
+  // If ASLR is enabled the change the load offset
   if(aslr_enabled){
     loff = random();
   }
@@ -60,6 +62,7 @@ exec(char *path, char **argv)
   // Load program into memory.
     sz = 0;
   
+  // for addresses from 0 to loff we map it to 0
   sz = allocuvm(pgdir, 0, loff);
 
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
@@ -71,7 +74,8 @@ exec(char *path, char **argv)
       goto bad;
     if(ph.vaddr + ph.memsz < ph.vaddr)
       goto bad;
-    ph.vaddr += loff;           // apply the offset to program segment
+    // apply the offset to program segment
+    ph.vaddr += loff;           
     if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0)
       goto bad;
     if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
@@ -85,6 +89,7 @@ exec(char *path, char **argv)
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
   uint soff = 2;
+  // If ASLR is enabled the change the stack offset
   if(aslr_enabled){
     soff += (random()/2)%500+1;
   }
@@ -122,6 +127,7 @@ exec(char *path, char **argv)
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
+  // the main addredd is aslo shifted by load offset
   curproc->tf->eip = elf.entry + loff;  // main
   curproc->tf->esp = sp;
   switchuvm(curproc);

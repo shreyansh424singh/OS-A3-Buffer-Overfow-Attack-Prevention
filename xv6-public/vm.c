@@ -205,16 +205,20 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
   uint pgoff = taddr - naddr;
   char *tt = (char*)naddr;
 
+  // Filling the page with 0s starting a naddr.
   if((pte = walkpgdir(pgdir, tt, 1)) == 0){
     panic("loaduvm: address should exist");
   }
   pa = PTE_ADDR(*pte);
 
+  // Getting the amount of bytes in the first (partial)page
   if(sz < PGSIZE-pgoff)
     n = sz;
   else
     n = PGSIZE-pgoff;
-  
+
+  // Loading the first (partial)page (set of bytes)
+  // in the address beyond base address + offset
   if(readi(ip, P2V(pa + pgoff), offset, n) != n)
     return -1;
   offset += n;
@@ -411,4 +415,3 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 // Blank page.
 //PAGEBREAK!
 // Blank page.
-
