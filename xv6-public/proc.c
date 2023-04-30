@@ -560,6 +560,6 @@ int random(void)
   int rand_num;
   // Generate a random number between 0 and M-1
   for (int i = 0; i < 10; i++)
-    rand_num = rand() % 4096;
-  return (rand_num*rand_num);
+    rand_num = rand() % 4000;
+  return (rand_num);
 }

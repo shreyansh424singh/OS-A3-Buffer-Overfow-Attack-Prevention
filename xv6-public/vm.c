@@ -7,9 +7,6 @@
 #include "proc.h"
 #include "elf.h"
 
-#define USERTOP     0x80000000  // top of user space
-#define aslr_flag 1
-
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
@@ -166,12 +163,6 @@ switchuvm(struct proc *p)
   if(p->pgdir == 0)
     panic("switchuvm: no pgdir");
 
-  // if(aslr_flag){
-  //   curproc->sz = newsz; // update the size of the current process
-  //   newsz = allocuvm(p->pgdir, curproc->sz, newsz); // allocate memory with random offset
-  //   p->sz = newsz; // update the size of the new process
-  // }
-
   pushcli();
   mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts,
                                 sizeof(mycpu()->ts)-1, 0);
@@ -212,15 +203,8 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
 
-  // if (aslr_flag) {
-  //   // Randomize the starting address within the valid range
-  //   uint rnd = random() % (1024);
-  //   addr = (char*)PGROUNDDOWN(USERTOP - sz - rnd);
-  // }
-
   for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
-      // cprintf("hello\n"); 
+    if((pte = walkpgdir(pgdir, addr+i, 1)) == 0)
       panic("loaduvm: address should exist");
     pa = PTE_ADDR(*pte);
     if(sz - i < PGSIZE)
@@ -229,22 +213,6 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
       n = PGSIZE;
     if(readi(ip, P2V(pa), offset+i, n) != n)
       return -1;
-
-    // if(aslr_flag) {
-    //  // Add a random offset to the physical address for ASLR
-    //  // pa += random() % PGSIZE;
-    //   pa += 64;
-    // }
-
-    // memset(pa, 0, PGSIZE);
-    // if(readi(ip, pa, offset+i, PGSIZE) != PGSIZE){
-    //   kfree(pa);
-    //   return -1;
-    // }
-    // if(mappages(pgdir, addr+i, PGSIZE, P2V(pa), PTE_W|PTE_U) < 0){
-    //   kfree(pa);
-    //   return -1;
-    // }
   }
   return 0;
 }
@@ -262,23 +230,14 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   if(newsz < oldsz)
     return oldsz;
 
-cprintf("a before %d \n", a);
   a = PGROUNDUP(oldsz);
-cprintf("a after %d \n", a);
   for(; a < newsz; a += PGSIZE){
     mem = kalloc();
     if(mem == 0){
-      cprintf("allocuvm out of memory\n");
       deallocuvm(pgdir, newsz, oldsz);
       return 0;
     }
     memset(mem, 0, PGSIZE);
-
-    // Randomize the page allocation using ASLR
-    // if (aslr_flag) {
-    //   // uint r = random() % (1024);  // Generate a random offset
-    //   a += 1;
-    // }
 
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
       cprintf("allocuvm out of memory (2)\n");
