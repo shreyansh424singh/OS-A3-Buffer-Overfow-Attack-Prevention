@@ -30,11 +30,13 @@ exec(char *path, char **argv)
     iunlockput(ip);
   }
 
-  int ads=0;
+  uint loff = 0;
 
   if(aslr_enabled){
-    ads = random();
+    loff = (random()%10000)*2+1;
   }
+
+  cprintf("load offset is %d\n", loff);
 
   char *s, *last;
 
@@ -47,7 +49,6 @@ exec(char *path, char **argv)
   }
   ilock(ip);
   pgdir = 0;
-  ads = PGROUNDUP(ads);
 
   // Check ELF header
   if(readi(ip, (char*)&elf, 0, sizeof(elf)) != sizeof(elf))
@@ -55,15 +56,13 @@ exec(char *path, char **argv)
   if(elf.magic != ELF_MAGIC)
     goto bad;
   
-  if(curproc->pid < 3)
-    ads = 0;
-
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
   // Load program into memory.
     sz = 0;
-    sz += ads;
+  
+  sz = allocuvm(pgdir, 0, loff);
 
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
@@ -74,11 +73,9 @@ exec(char *path, char **argv)
       goto bad;
     if(ph.vaddr + ph.memsz < ph.vaddr)
       goto bad;
-    ph.vaddr += ads;           // apply the offset to program segment
-    ph.filesz += ads;
+
+    ph.vaddr += loff;           // apply the offset to program segment
     if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0)
-      goto bad;
-    if(ph.vaddr % PGSIZE != 0)
       goto bad;
     if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
       goto bad;
@@ -90,7 +87,11 @@ exec(char *path, char **argv)
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
-  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
+  uint soff = 2;
+  if(aslr_enabled){
+    soff = random()%100;
+  }
+  if((sz = allocuvm(pgdir, sz, sz + soff*PGSIZE)) == 0)
     goto bad;
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
@@ -124,7 +125,7 @@ exec(char *path, char **argv)
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
-  curproc->tf->eip = elf.entry;  // main
+  curproc->tf->eip = elf.entry + loff;  // main
   curproc->tf->esp = sp;
   switchuvm(curproc);
   freevm(oldpgdir);

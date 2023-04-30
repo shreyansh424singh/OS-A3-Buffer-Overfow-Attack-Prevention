@@ -17,6 +17,8 @@ void vulnerable_func(char *payload)
 int main(int argc, char *argv[])
 {
     int fd;
+    printf(1, "HElldcefrvfvvr\n");
+    printf(1, "foo addr %p\n", &foo);
 
     fd = open("payload", O_RDONLY);
     char payload[100];

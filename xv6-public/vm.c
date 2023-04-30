@@ -197,22 +197,59 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 int
 loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 {
+  cprintf("load hello\n");
   uint i, pa, n;
   pte_t *pte;
 
-  if((uint) addr % PGSIZE != 0)
-    panic("loaduvm: addr must be page aligned");
 
-  for(i = 0; i < sz; i += PGSIZE){
+  uint taddr = (uint) addr;
+  uint naddr = PGROUNDDOWN(taddr);
+  uint pg_off = taddr - naddr;
+  char *tt = (char*)naddr;
+
+  cprintf("taddr %d\n", taddr);
+  cprintf("naddr %d\n", naddr);
+  cprintf("off %d\n", pg_off);
+
+  if((pte = walkpgdir(pgdir, tt, 1)) == 0){
+    panic("loaduvm: address should exist");
+  }
+  pa = PTE_ADDR(*pte);
+
+  cprintf("pte %d\n", pte);
+  cprintf("pa %d\n", pa);
+
+  // zero the page
+  // memset((void*)pte, 0, PGSIZE);
+
+  cprintf("pte after %d\n", pte);
+
+  // fill the remainder of the page or until there are no bytes left to write
+  n = (sz < PGSIZE - pg_off)? sz : PGSIZE - pg_off;
+
+  cprintf("n %d\n", n);
+
+  cprintf("sz %d\n", sz);
+  cprintf("offset %d\n", offset);
+  cprintf("pa %d\n", pa);
+  
+  if(readi(ip, P2V(pa + pg_off), offset, n) != n)
+    return -1;
+  offset += n;
+  sz -= n;
+
+  for(i = PGSIZE; sz > 0; i += PGSIZE){
     if((pte = walkpgdir(pgdir, addr+i, 1)) == 0)
       panic("loaduvm: address should exist");
     pa = PTE_ADDR(*pte);
-    if(sz - i < PGSIZE)
-      n = sz - i;
+    if(sz < PGSIZE)
+      n = sz;
     else
       n = PGSIZE;
-    if(readi(ip, P2V(pa), offset+i, n) != n)
+    if(readi(ip, P2V(pa), offset, n) != n)
       return -1;
+    sz -= n;
+    offset += n;
   }
   return 0;
 }
