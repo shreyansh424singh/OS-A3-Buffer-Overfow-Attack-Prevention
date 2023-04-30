@@ -4,11 +4,11 @@
 
 void foo()
 {
-    printf(1, "SECRET_STRING");
+    printf(1, "SECRET_STRING:COLOS\n");
 }
 
 
-void vulnerable_func(char *payload)
+void vulnerable_function(char *payload)
 {
     char buffer[4];
     strcpy(buffer, payload);
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
     read(fd, payload, 100);
 
-    vulnerable_func(payload);
+    vulnerable_function(payload);
 
     close(fd);
     exit();
