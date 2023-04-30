@@ -99,6 +99,8 @@ found:
   }
   sp = p->kstack + KSTACKSIZE;
 
+  // sp+=KSTACKSIZE;
+
   // Leave room for trap frame.
   sp -= sizeof *p->tf;
   p->tf = (struct trapframe*)sp;
