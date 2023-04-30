@@ -33,10 +33,8 @@ exec(char *path, char **argv)
   uint loff = 0;
 
   if(aslr_enabled){
-    loff = (random()%10000)*2+1;
+    loff = random();
   }
-
-  cprintf("load offset is %d\n", loff);
 
   char *s, *last;
 
@@ -73,7 +71,6 @@ exec(char *path, char **argv)
       goto bad;
     if(ph.vaddr + ph.memsz < ph.vaddr)
       goto bad;
-
     ph.vaddr += loff;           // apply the offset to program segment
     if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0)
       goto bad;
@@ -89,7 +86,7 @@ exec(char *path, char **argv)
   sz = PGROUNDUP(sz);
   uint soff = 2;
   if(aslr_enabled){
-    soff = random()%100;
+    soff += (random()/2)%500+1;
   }
   if((sz = allocuvm(pgdir, sz, sz + soff*PGSIZE)) == 0)
     goto bad;
