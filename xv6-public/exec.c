@@ -20,12 +20,13 @@ exec(char *path, char **argv)
   struct proc *curproc = myproc();
   int aslr_enabled=0;
 
-  if ((ip = namei("aslr")) == 0) {
+  char read[2] = {0};
+  if ((ip = namei("aslr_flag")) == 0) {
     cprintf("unable to open\n");
   } else {
     ilock(ip);
-    readi(ip, (char*)&aslr_enabled, 0, sizeof(int));
-    aslr_enabled-=48;
+    readi(ip, (char*)&read, 0, sizeof(char));
+    aslr_enabled = (read[0] == '1')? 1 : 0;
     iunlockput(ip);
   }
 
@@ -46,17 +47,16 @@ exec(char *path, char **argv)
   }
   ilock(ip);
   pgdir = 0;
+  ads = PGROUNDUP(ads);
 
   // Check ELF header
   if(readi(ip, (char*)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
   if(elf.magic != ELF_MAGIC)
     goto bad;
-
-  if(curproc->pid > 2)
-    ads = PGROUNDUP(ads);
-  else 
-    ads = PGROUNDDOWN(ads);
+  
+  if(curproc->pid < 3)
+    ads = 0;
 
   if((pgdir = setupkvm()) == 0)
     goto bad;

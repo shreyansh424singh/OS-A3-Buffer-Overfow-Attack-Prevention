@@ -91,7 +91,7 @@ for ((t = 1; t <= $check_test; ++t)); do
 	if [ -s "$file_name" ]; then
 		echo $file_name
 		echo $aslr_file_name
-		if [! -s "$aslr_file_name" ]; then
+		if [ ! -s "$aslr_file_name" ]; then
 			# echo $aslr_file_name
 			echo -e "PASS"
 			marks="$marks,1" # 1 mark for pass

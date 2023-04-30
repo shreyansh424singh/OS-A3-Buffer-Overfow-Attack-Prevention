@@ -185,8 +185,8 @@ UPROGS=\
 	_zombie\
 	_buffer_overflow\
 
-fs.img: mkfs README payload aslr $(UPROGS)
-	./mkfs fs.img README payload aslr $(UPROGS)
+fs.img: mkfs README payload aslr_flag $(UPROGS)
+	./mkfs fs.img README payload aslr_flag $(UPROGS)
 
 -include *.d
 
